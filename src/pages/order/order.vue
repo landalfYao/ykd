@@ -111,7 +111,7 @@ export default {
         "mqo.size": 10000,
         type: "基地订单",
         "mqo.orderBy": "createtime desc",
-        shopId: ""
+        shopid: "0d6035b4-8e5e-41d4-9190-8354b0ec9c76"
       },
       submitData: {
         id: sessionStorage.getItem("adminId"),
