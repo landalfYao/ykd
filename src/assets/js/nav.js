@@ -107,12 +107,15 @@ const admin3 = [{
     }, ]
   },
   {
-    title: '报摊产品',
+    title: '摆摊产品',
     icon: 'md-stats',
     sub: [{
-      title: '列表',
+      title: '摆摊商品',
       path: '/gi'
-    }, ]
+    }, {
+      title: '摆摊订单',
+      path: '/border'
+    },]
   },
 
 ]

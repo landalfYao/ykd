@@ -51,6 +51,8 @@ import jbset from '../pages/jbset'
 import bz from '../pages/shop/cz/bz.vue'
 import cs from '../pages/shop/cz/cs.vue'
 
+import border from '../pages/order/border.vue'
+
 Vue.use(Router)
 
 export default new Router({
@@ -72,6 +74,11 @@ export default new Router({
           path: '/wxa_settings',
           name: 'wxaSettings',
           component: wxaSettings
+        },
+        {
+          path: '/border',
+          name: '摆摊订单',
+          component: border
         },
         {
           path: '/wxconfig',
