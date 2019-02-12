@@ -49,6 +49,7 @@ import gi from '../pages/shop/goods/goods_wan'
 
 import jbset from '../pages/jbset'
 import bz from '../pages/shop/cz/bz.vue'
+import cs from '../pages/shop/cz/cs.vue'
 
 Vue.use(Router)
 
@@ -81,6 +82,11 @@ export default new Router({
           path: '/bz',
           name: 'bz',
           component: bz
+        },
+        {
+          path: '/cs',
+          name: 'cs',
+          component: cs
         },
         {
           path: '/resetpwd',

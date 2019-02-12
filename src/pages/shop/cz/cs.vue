@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>
-      <el-button @click="$router.go(-1)" size="small" icon="el-icon-arrow-left" circle></el-button>操作列表
+      <el-button @click="$router.go(-1)" size="small" icon="el-icon-arrow-left" circle></el-button>成熟列表
     </h2>
     <div class="line" style="margin-top:15px"></div>
     <!-- <div class="search-bar">
@@ -12,14 +12,12 @@
     </div>-->
     <div class="panel-between">
       <ButtonGroup>
-        <!-- <Button @click="update(-1)">删除</Button> -->
-        <!-- <Button @click="update(0)">上线</Button>
-        <Button @click="update(1)">下线</Button>-->
-        <!-- <Button @click="navTo3('/goods_edit',cateid)">新增商品</Button> -->
+        <!-- <Button @click="wanc()">批量完成</Button> -->
+        <Button @click="centerDialogVisible = true">新增成熟</Button>
       </ButtonGroup>
       <div>
         <span>条数：</span>
-        <InputNumber :step="1" v-model="data.length" @on-blur="changeSize" style="width:60px"></InputNumber>
+        <InputNumber :step="1" v-model="query.size" @on-blur="changeSize" style="width:60px"></InputNumber>
       </div>
     </div>
 
@@ -30,41 +28,26 @@
     >
       <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column prop="id" label="ID"></el-table-column>
-      <el-table-column prop="wxUser.nickname" label="用户名称"></el-table-column>
-      <el-table-column prop="shopName" label="基地名称"></el-table-column>
-      <el-table-column label="操作">
-        <template slot-scope="scope">
-          <el-dropdown trigger="click">
-            <el-button class="el-dropdown-link" type="text">
-              操作
-              <i class="el-icon-arrow-down el-icon--right"></i>
-            </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item>
-                <div style="width:100px" @click="navTo2('/cz',scope.row.id)">操作</div>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <div style="width:100px" @click="navTo2('/bz',scope.row.id)">播种</div>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <div style="width:100px" @click="navTo2('/cs',scope.row.id)">成熟列表</div>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </template>
-      </el-table-column>
+      <el-table-column prop="content" label="描述"></el-table-column>
+      <el-table-column prop="createtime" label="时间"></el-table-column>
     </el-table>
     <div class="panel-end" style="margin-top:20px">
-      <!-- <Page
+      <Page
         :total="total"
         :page-size="query.size"
         :current="query.page"
         size="small"
         show-total
         @on-change="changePage"
-      />-->
+      />
     </div>
-
+    <el-dialog title="新增成熟" :visible.sync="centerDialogVisible" width="300px" center>
+      <el-input v-model="content" placeholder="描述"></el-input>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="centerDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="wanc()">确 定</el-button>
+      </span>
+    </el-dialog>
     <!-- ************************************************ -->
   </div>
 </template>
@@ -74,6 +57,7 @@ var that;
 export default {
   data() {
     return {
+      centerDialogVisible: false,
       cateid: "",
       shopid: "",
       remarksDialog: false,
@@ -85,8 +69,8 @@ export default {
       searchList: [],
       total: 0,
       query: {
-        page: 1,
-        size: 10000,
+        page: JSON.parse(sessionStorage.getItem("config")).current_page,
+        size: JSON.parse(sessionStorage.getItem("config")).page_size,
         orderBy: "",
         id: ""
       },
@@ -99,10 +83,7 @@ export default {
     that = this;
     this.getDataList();
     this.cateid = this.$route.query.cateid;
-    this.shopid =
-      sessionStorage.getItem("adminType") == 0
-        ? this.$route.query.id
-        : sessionStorage.getItem("shopid");
+    this.shopid = this.$route.query.id;
   },
   methods: {
     navTo(path, data) {
@@ -126,19 +107,32 @@ export default {
     navTo3(path, id) {
       this.$router.push({ path: path, query: { cateid: id, id: this.shopid } });
     },
-    /******基础********************************************* */
+    wanc() {
+      this.$http
+        .post(
+          this.com.JAVA_API + "sh/add",
+          {
+            placeid: this.$route.query.id,
+            content: this.content
+          },
+          { emulateJSON: true }
+        )
+        .then(res => {
+          that.centerDialogVisible = false;
+          if (res.data.code) {
+            that.$message.success(res.data.msg);
+            that.getDataList();
+          } else {
+            that.$message.error(res.data.msg);
+          }
+        });
+    },
+    /******基础**********************************************/
     getDataList() {
       this.$http
         .post(
-          this.com.JAVA_API + "place/find",
-          {
-            page: 1,
-            size: 1000,
-            shopid:
-              sessionStorage.getItem("adminType") == 0
-                ? this.$route.query.id
-                : sessionStorage.getItem("shopid")
-          },
+          this.com.JAVA_API + "sh/find",
+          { placeid: this.$route.query.id },
           { emulateJSON: true }
         )
         .then(res => {
