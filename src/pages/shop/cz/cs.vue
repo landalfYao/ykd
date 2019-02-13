@@ -13,11 +13,11 @@
     <div class="panel-between">
       <ButtonGroup>
         <!-- <Button @click="wanc()">批量完成</Button> -->
-        <Button @click="centerDialogVisible = true">新增成熟</Button>
+        <Button @click="wanc()">新增成熟</Button>
       </ButtonGroup>
       <div>
-        <span>条数：</span>
-        <InputNumber :step="1" v-model="query.size" @on-blur="changeSize" style="width:60px"></InputNumber>
+        <!-- <span>条数：</span>
+        <InputNumber :step="1" v-model="query.size" @on-blur="changeSize" style="width:60px"></InputNumber>-->
       </div>
     </div>
 
@@ -28,24 +28,48 @@
     >
       <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column prop="id" label="ID"></el-table-column>
-      <el-table-column prop="content" label="描述"></el-table-column>
-      <el-table-column prop="createtime" label="时间"></el-table-column>
+      <el-table-column prop="msg" label="描述"></el-table-column>
+      <el-table-column prop="state" label="状态">
+        <template slot-scope="scope">
+          <div>
+            <el-tag v-if="scope.row.state == 0" type="danger">成熟</el-tag>
+            <el-tag v-if="scope.row.state == 1" type="success">已采摘</el-tag>
+            <el-tag v-if="scope.row.state == 3" type="warning">待邮寄</el-tag>
+            <el-tag v-if="scope.row.state == 4" type="primary">已邮寄</el-tag>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="address" label="邮寄地址"></el-table-column>
+      <el-table-column prop="cssj" label="成熟时间"></el-table-column>
+      <el-table-column prop="szsj" label="采摘时间"></el-table-column>
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <div>
+            <el-button
+              type="text"
+              v-if="scope.row.state == 1"
+              @click="temprow=scope.row,centerDialogVisible = true"
+            >采摘描述</el-button>
+            <el-button type="text" v-if="scope.row.state == 3" @click="wc3(scope.row)">邮寄</el-button>
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
     <div class="panel-end" style="margin-top:20px">
-      <Page
+      <!-- <Page
         :total="total"
         :page-size="query.size"
         :current="query.page"
         size="small"
         show-total
         @on-change="changePage"
-      />
+      />-->
     </div>
     <el-dialog title="新增成熟" :visible.sync="centerDialogVisible" width="300px" center>
       <el-input v-model="content" placeholder="描述"></el-input>
       <span slot="footer" class="dialog-footer">
         <el-button @click="centerDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="wanc()">确 定</el-button>
+        <el-button type="primary" @click="wc2()">确 定</el-button>
       </span>
     </el-dialog>
     <!-- ************************************************ -->
@@ -74,6 +98,7 @@ export default {
         orderBy: "",
         id: ""
       },
+      temprow: {},
       multipleSelection: [],
       selectionId: "",
       remarks: ""
@@ -107,13 +132,58 @@ export default {
     navTo3(path, id) {
       this.$router.push({ path: path, query: { cateid: id, id: this.shopid } });
     },
+    wc3(row) {
+      let content = JSON.parse(row.content);
+      content.state = 4;
+      this.$http
+        .post(
+          this.com.JAVA_API + "sh/update",
+          {
+            id: row.id,
+            content: JSON.stringify(content)
+          },
+          { emulateJSON: true }
+        )
+        .then(res => {
+          that.centerDialogVisible = false;
+          if (res.data.code) {
+            that.$message.success(res.data.msg);
+            that.getDataList();
+          } else {
+            that.$message.error(res.data.msg);
+          }
+        });
+    },
+    wc2() {
+      let content = JSON.parse(this.temprow.content);
+      content.szsj = new Date();
+      content.msg = this.content;
+      this.$http
+        .post(
+          this.com.JAVA_API + "sh/update",
+          {
+            id: this.temprow.id,
+            content: JSON.stringify(content)
+          },
+          { emulateJSON: true }
+        )
+        .then(res => {
+          that.centerDialogVisible = false;
+          if (res.data.code) {
+            that.$message.success(res.data.msg);
+            that.getDataList();
+          } else {
+            that.$message.error(res.data.msg);
+          }
+        });
+    },
     wanc() {
       this.$http
         .post(
           this.com.JAVA_API + "sh/add",
           {
             placeid: this.$route.query.id,
-            content: this.content
+            content: JSON.stringify({ state: 0, cssj: new Date() })
           },
           { emulateJSON: true }
         )
@@ -137,6 +207,22 @@ export default {
         )
         .then(res => {
           if (res.data.code) {
+            for (let i in res.data.params.list) {
+              let t = JSON.parse(res.data.params.list[i].content);
+              res.data.params.list[i].state = t.state;
+              if (t.msg) {
+                res.data.params.list[i].msg = t.msg;
+              }
+              if (t.cssj) {
+                res.data.params.list[i].cssj = t.cssj.substring(0, 10);
+              }
+              if (t.szsj) {
+                res.data.params.list[i].szsj = t.szsj.substring(0, 10);
+              }
+              if (t.address) {
+                res.data.params.list[i].address = t.address;
+              }
+            }
             that.data = res.data.params.list;
           } else {
             that.$message.error(res.data.msg);
